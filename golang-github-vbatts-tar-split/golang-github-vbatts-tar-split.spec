@@ -31,8 +31,8 @@
 Name:           golang-%{provider}-%{project}-%{repo}
 Version:        0.9.12
 Release:        1%{?dist}
-Summary:        tar archive assembly/disassembly
-License:        BSD 3-clause
+Summary:        Tar archive assembly/dis-assembly
+License:        BSD
 URL:            https://%{provider_prefix}
 Source0:        https://%{provider_prefix}/archive/%{commit}/%{repo}-%{shortcommit}.tar.gz
 
@@ -42,7 +42,8 @@ ExclusiveArch:  %{?go_arches:%{go_arches}}%{!?go_arches:%{ix86} x86_64 %{arm}}
 BuildRequires:  %{?go_compiler:compiler(go-compiler)}%{!?go_compiler:golang}
 
 %description
-Pristinely disassembling a tar archive, and stashing needed raw bytes and offsets to reassemble a validating original archive.
+Pristinely disassembling a tar archive, and stashing needed raw bytes and
+offsets to reassemble a validating original archive.
 
 %if 0%{?with_devel}
 %package devel

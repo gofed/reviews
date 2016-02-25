@@ -51,6 +51,15 @@ ExclusiveArch:  %{?go_arches:%{go_arches}}%{!?go_arches:%{ix86} x86_64 %{arm}}
 # If go_compiler is not set to 1, there is no virtual provide. Use golang instead.
 BuildRequires:  %{?go_compiler:compiler(go-compiler)}%{!?go_compiler:golang}
 BuildRequires: libtool-ltdl-devel systemd
+BuildRequires: golang(github.com/docker/docker/pkg/term)
+BuildRequires: golang(github.com/golang/protobuf/proto)
+BuildRequires: golang(github.com/google/gofuzz)
+BuildRequires: golang(github.com/gorilla/mux)
+BuildRequires: golang(github.com/mattn/go-sqlite3)
+BuildRequires: golang(github.com/prometheus/client_golang/prometheus)
+BuildRequires: golang(golang.org/x/crypto/nacl/secretbox)
+BuildRequires: golang(golang.org/x/crypto/scrypt)
+BuildRequires: golang(golang.org/x/net/context)
 Requires(post): systemd
 Requires(preun): systemd
 Requires(postun): systemd
@@ -83,23 +92,14 @@ BuildRequires: golang(github.com/docker/distribution/registry/api/errcode)
 BuildRequires: golang(github.com/docker/distribution/registry/api/v2)
 BuildRequires: golang(github.com/docker/distribution/registry/auth)
 BuildRequires: golang(github.com/docker/distribution/uuid)
-BuildRequires: golang(github.com/docker/docker/pkg/term)
 BuildRequires: golang(github.com/docker/go-connections/tlsconfig)
 BuildRequires: golang(github.com/docker/go/canonical/json)
 BuildRequires: golang(github.com/dvsekhvalnov/jose2go)
 BuildRequires: golang(github.com/go-sql-driver/mysql)
-BuildRequires: golang(github.com/golang/protobuf/proto)
-BuildRequires: golang(github.com/google/gofuzz)
-BuildRequires: golang(github.com/gorilla/mux)
 BuildRequires: golang(github.com/jinzhu/gorm)
-BuildRequires: golang(github.com/mattn/go-sqlite3)
 BuildRequires: golang(github.com/miekg/pkcs11)
-BuildRequires: golang(github.com/prometheus/client_golang/prometheus)
 BuildRequires: golang(github.com/spf13/cobra)
 BuildRequires: golang(github.com/spf13/viper)
-BuildRequires: golang(golang.org/x/crypto/nacl/secretbox)
-BuildRequires: golang(golang.org/x/crypto/scrypt)
-BuildRequires: golang(golang.org/x/net/context)
 BuildRequires: golang(google.golang.org/grpc)
 BuildRequires: golang(google.golang.org/grpc/codes)
 BuildRequires: golang(google.golang.org/grpc/credentials)
@@ -180,11 +180,13 @@ building other packages which use import path with
 Summary:         Unit tests for %{name} package
 BuildArch:       noarch
 
+%if 0%{?with_check}
+BuildRequires: golang(github.com/stretchr/testify/assert)
+BuildRequires: golang(github.com/stretchr/testify/require)
+%endif
 %if 0%{?with_check} && ! 0%{?with_bundled}
 BuildRequires: golang(github.com/docker/distribution/registry/auth/silly)
 BuildRequires: golang(github.com/spf13/cobra)
-BuildRequires: golang(github.com/stretchr/testify/assert)
-BuildRequires: golang(github.com/stretchr/testify/require)
 %endif
 
 Requires: golang(github.com/docker/distribution/registry/auth/silly)
@@ -205,6 +207,16 @@ providing packages with %{import_path} prefix.
 %prep
 %setup -q -n %{repo}-%{commit}
 %patch0 -p1 -b .config
+rm -rf Godeps/_workspace/src/github.com/docker/docker/pkg/term
+rm -rf Godeps/_workspace/src/github.com/golang/protobuf/proto
+rm -rf Godeps/_workspace/src/github.com/google/gofuzz
+rm -rf Godeps/_workspace/src/github.com/gorilla/mux
+rm -rf Godeps/_workspace/src/github.com/mattn/go-sqlite3
+rm -rf Godeps/_workspace/src/github.com/prometheus/client_golang/prometheus
+rm -rf Godeps/_workspace/src/github.com/stretchr/testify
+rm -rf Godeps/_workspace/src/golang.org/x/crypto/nacl/secretbox
+rm -rf Godeps/_workspace/src/golang.org/x/net/context
+
 
 %build
 mkdir -p src/$(dirname %{import_path})

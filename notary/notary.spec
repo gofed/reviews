@@ -1,7 +1,6 @@
 %if 0%{?fedora} || 0%{?rhel} == 6
 %global with_devel 1
-#FIXME? global with_bundled 0
-%global with_bundled 1
+%global with_bundled 0
 %global with_debug 1
 %global with_check 1
 %global with_unit_test 1
@@ -44,22 +43,52 @@ Source2:        notary-signer.service
 # OTOH upstream wants the unmodified configuration to work in docker-compose
 # setups. So, not sent upstream.
 Patch0:         notary-config.patch
-
+Patch1:         patch-notary-code-to-use-newer-commits-of-dependenci.patch
 
 # e.g. el6 has ppc64 arch without gcc-go, so EA tag is required
 ExclusiveArch:  %{?go_arches:%{go_arches}}%{!?go_arches:%{ix86} x86_64 %{arm}}
 # If go_compiler is not set to 1, there is no virtual provide. Use golang instead.
 BuildRequires:  %{?go_compiler:compiler(go-compiler)}%{!?go_compiler:golang}
-BuildRequires: libtool-ltdl-devel systemd
+BuildRequires:  libtool-ltdl-devel systemd
+
+%if ! 0%{?with_bundled}
+BuildRequires: golang(github.com/Sirupsen/logrus)
+BuildRequires: golang(github.com/Sirupsen/logrus/hooks/bugsnag)
+BuildRequires: golang(github.com/agl/ed25519)
+BuildRequires: golang(github.com/bugsnag/bugsnag-go)
+BuildRequires: golang(github.com/docker/distribution/context)
+BuildRequires: golang(github.com/docker/distribution/health)
+BuildRequires: golang(github.com/docker/distribution/registry/api/errcode)
+BuildRequires: golang(github.com/docker/distribution/registry/auth)
+BuildRequires: golang(github.com/docker/distribution/registry/auth/htpasswd)
+BuildRequires: golang(github.com/docker/distribution/registry/auth/token)
+BuildRequires: golang(github.com/docker/distribution/registry/client/auth)
+BuildRequires: golang(github.com/docker/distribution/registry/client/transport)
+BuildRequires: golang(github.com/docker/distribution/uuid)
 BuildRequires: golang(github.com/docker/docker/pkg/term)
+BuildRequires: golang(github.com/docker/go/canonical/json)
+BuildRequires: golang(github.com/docker/go-connections/tlsconfig)
+BuildRequires: golang(github.com/dvsekhvalnov/jose2go)
+BuildRequires: golang(github.com/go-sql-driver/mysql)
 BuildRequires: golang(github.com/golang/protobuf/proto)
 BuildRequires: golang(github.com/google/gofuzz)
 BuildRequires: golang(github.com/gorilla/mux)
+BuildRequires: golang(github.com/jinzhu/gorm)
 BuildRequires: golang(github.com/mattn/go-sqlite3)
+BuildRequires: golang(github.com/miekg/pkcs11)
+BuildRequires: golang(github.com/mitchellh/go-homedir)
+BuildRequires: golang(github.com/olekukonko/tablewriter)
 BuildRequires: golang(github.com/prometheus/client_golang/prometheus)
+BuildRequires: golang(github.com/spf13/cobra)
+BuildRequires: golang(github.com/spf13/viper)
 BuildRequires: golang(golang.org/x/crypto/nacl/secretbox)
 BuildRequires: golang(golang.org/x/crypto/scrypt)
 BuildRequires: golang(golang.org/x/net/context)
+BuildRequires: golang(google.golang.org/grpc)
+BuildRequires: golang(google.golang.org/grpc/codes)
+BuildRequires: golang(google.golang.org/grpc/credentials)
+%endif
+
 Requires(post): systemd
 Requires(preun): systemd
 Requires(postun): systemd
@@ -89,17 +118,24 @@ BuildRequires: golang(github.com/bugsnag/bugsnag-go)
 BuildRequires: golang(github.com/docker/distribution/context)
 BuildRequires: golang(github.com/docker/distribution/health)
 BuildRequires: golang(github.com/docker/distribution/registry/api/errcode)
-BuildRequires: golang(github.com/docker/distribution/registry/api/v2)
 BuildRequires: golang(github.com/docker/distribution/registry/auth)
 BuildRequires: golang(github.com/docker/distribution/uuid)
-BuildRequires: golang(github.com/docker/go-connections/tlsconfig)
+BuildRequires: golang(github.com/docker/docker/pkg/term)
 BuildRequires: golang(github.com/docker/go/canonical/json)
+BuildRequires: golang(github.com/docker/go-connections/tlsconfig)
 BuildRequires: golang(github.com/dvsekhvalnov/jose2go)
 BuildRequires: golang(github.com/go-sql-driver/mysql)
+BuildRequires: golang(github.com/golang/protobuf/proto)
+BuildRequires: golang(github.com/google/gofuzz)
+BuildRequires: golang(github.com/gorilla/mux)
 BuildRequires: golang(github.com/jinzhu/gorm)
+BuildRequires: golang(github.com/mattn/go-sqlite3)
 BuildRequires: golang(github.com/miekg/pkcs11)
-BuildRequires: golang(github.com/spf13/cobra)
+BuildRequires: golang(github.com/prometheus/client_golang/prometheus)
 BuildRequires: golang(github.com/spf13/viper)
+BuildRequires: golang(golang.org/x/crypto/nacl/secretbox)
+BuildRequires: golang(golang.org/x/crypto/scrypt)
+BuildRequires: golang(golang.org/x/net/context)
 BuildRequires: golang(google.golang.org/grpc)
 BuildRequires: golang(google.golang.org/grpc/codes)
 BuildRequires: golang(google.golang.org/grpc/credentials)
@@ -112,12 +148,11 @@ Requires:      golang(github.com/bugsnag/bugsnag-go)
 Requires:      golang(github.com/docker/distribution/context)
 Requires:      golang(github.com/docker/distribution/health)
 Requires:      golang(github.com/docker/distribution/registry/api/errcode)
-Requires:      golang(github.com/docker/distribution/registry/api/v2)
 Requires:      golang(github.com/docker/distribution/registry/auth)
 Requires:      golang(github.com/docker/distribution/uuid)
 Requires:      golang(github.com/docker/docker/pkg/term)
-Requires:      golang(github.com/docker/go-connections/tlsconfig)
 Requires:      golang(github.com/docker/go/canonical/json)
+Requires:      golang(github.com/docker/go-connections/tlsconfig)
 Requires:      golang(github.com/dvsekhvalnov/jose2go)
 Requires:      golang(github.com/go-sql-driver/mysql)
 Requires:      golang(github.com/golang/protobuf/proto)
@@ -181,12 +216,10 @@ Summary:         Unit tests for %{name} package
 BuildArch:       noarch
 
 %if 0%{?with_check}
-BuildRequires: golang(github.com/stretchr/testify/assert)
-BuildRequires: golang(github.com/stretchr/testify/require)
-%endif
-%if 0%{?with_check} && ! 0%{?with_bundled}
 BuildRequires: golang(github.com/docker/distribution/registry/auth/silly)
 BuildRequires: golang(github.com/spf13/cobra)
+BuildRequires: golang(github.com/stretchr/testify/assert)
+BuildRequires: golang(github.com/stretchr/testify/require)
 %endif
 
 Requires: golang(github.com/docker/distribution/registry/auth/silly)
@@ -207,16 +240,7 @@ providing packages with %{import_path} prefix.
 %prep
 %setup -q -n %{repo}-%{commit}
 %patch0 -p1 -b .config
-rm -rf Godeps/_workspace/src/github.com/docker/docker/pkg/term
-rm -rf Godeps/_workspace/src/github.com/golang/protobuf/proto
-rm -rf Godeps/_workspace/src/github.com/google/gofuzz
-rm -rf Godeps/_workspace/src/github.com/gorilla/mux
-rm -rf Godeps/_workspace/src/github.com/mattn/go-sqlite3
-rm -rf Godeps/_workspace/src/github.com/prometheus/client_golang/prometheus
-rm -rf Godeps/_workspace/src/github.com/stretchr/testify
-rm -rf Godeps/_workspace/src/golang.org/x/crypto/nacl/secretbox
-rm -rf Godeps/_workspace/src/golang.org/x/net/context
-
+%patch1 -p1
 
 %build
 mkdir -p src/$(dirname %{import_path})
